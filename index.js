@@ -11,6 +11,7 @@ const ACTIONS = {
     SYNC_CODE: 'sync-code',
     LEAVE: 'leave',
     FULLROOM: 'full-room',
+    STARTCOMBAT : 'start-combat'
 };
 
 const server = http.createServer(app);
@@ -39,8 +40,8 @@ io.on('connection', (socket) => {
     socket.on(ACTIONS.JOIN, ({ roomId, username }) => {
         userSocketMap[socket.id] = username;
         var numClients = getAllConnectedClients(roomId);
-        console.log('clients : ',numClients.length);
-        if(numClients.length == 0 || numClients.length == 1){
+        //First User
+        if(numClients.length == 0){
             socket.join(roomId);
             const clients = getAllConnectedClients(roomId);
             clients.forEach(({ socketId }) => {
@@ -48,6 +49,20 @@ io.on('connection', (socket) => {
                     clients,
                     username,
                     socketId: socket.id,
+                });
+            });
+        //Second User    
+        }else if(numClients.length == 1){
+            socket.join(roomId);
+            const clients = getAllConnectedClients(roomId);
+            clients.forEach(({ socketId }) => {
+                io.to(socketId).emit(ACTIONS.JOINED, {
+                    clients,
+                    username,
+                    socketId: socket.id,
+                });
+                io.to(socketId).emit(ACTIONS.STARTCOMBAT, {
+                    clients,
                 });
             });
         }else{
